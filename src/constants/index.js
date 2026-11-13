@@ -10,6 +10,29 @@ const USER_ROLES = Object.freeze({
   COURIER: 'COURIER',
 });
 
+const ORDER_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  CONFIRMED: 'CONFIRMED',
+  IN_TRANSIT: 'IN_TRANSIT',
+  DELIVERED: 'DELIVERED',
+  CANCELLED: 'CANCELLED',
+});
+
+const ORDER_PRIORITY = Object.freeze({
+  LOW: 'LOW',
+  NORMAL: 'NORMAL',
+  HIGH: 'HIGH',
+  URGENT: 'URGENT',
+});
+
+const DELIVERY_STATUS = Object.freeze({
+  PENDING: 'PENDING',
+  ASSIGNED: 'ASSIGNED',
+  IN_TRANSIT: 'IN_TRANSIT',
+  DELIVERED: 'DELIVERED',
+  FAILED: 'FAILED',
+});
+
 const NODE_ENVS = Object.freeze({
   DEVELOPMENT: 'development',
   PRODUCTION: 'production',
@@ -20,9 +43,32 @@ const HTTP_STATUS = Object.freeze({
   OK: 200,
   CREATED: 201,
   BAD_REQUEST: 400,
+  FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
   INTERNAL_SERVER_ERROR: 500,
 });
 
-module.exports = { PRODUCT_STATUS, USER_ROLES, NODE_ENVS, HTTP_STATUS };
+const MOCK_LIMITS = Object.freeze({
+  DEFAULT_QTY: 10,
+  MIN_QTY: 1,
+  MAX_QTY: 100,
+});
+
+const MOCK_COLLECTIONS = Object.freeze({
+  USERS: 'usuarios',
+  ORDERS: 'pedidos',
+  DELIVERIES: 'entregas',
+});
+
+module.exports = {
+  PRODUCT_STATUS,
+  USER_ROLES,
+  ORDER_STATUS,
+  ORDER_PRIORITY,
+  DELIVERY_STATUS,
+  NODE_ENVS,
+  HTTP_STATUS,
+  MOCK_LIMITS,
+  MOCK_COLLECTIONS,
+};

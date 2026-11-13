@@ -19,6 +19,10 @@ class UserRepository {
     return safeUser;
   }
 
+  static insertMany(docs) {
+    return User.insertMany(docs);
+  }
+
   static update(id, data) {
     return User.findByIdAndUpdate(id, data, { new: true, runValidators: true }).lean();
   }
