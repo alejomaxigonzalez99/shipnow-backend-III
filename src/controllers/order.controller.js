@@ -13,6 +13,11 @@ class OrderController {
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: order });
   });
 
+  static create = asyncHandler(async (req, res) => {
+    const order = await OrderService.create(req.body);
+    res.status(HTTP_STATUS.CREATED).json({ status: 'success', payload: order });
+  });
+
   static updateStatus = asyncHandler(async (req, res) => {
     const order = await OrderService.updateStatus(req.params.id, req.body.status);
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: order });

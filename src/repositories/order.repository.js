@@ -9,6 +9,10 @@ class OrderRepository {
     return Order.findById(id).lean();
   }
 
+  static create(data) {
+    return Order.create(data).then((doc) => doc.toObject());
+  }
+
   static updateStatus(id, status) {
     return Order.findByIdAndUpdate(id, { status }, { new: true, runValidators: true }).lean();
   }

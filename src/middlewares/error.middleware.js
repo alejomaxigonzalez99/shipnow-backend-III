@@ -1,4 +1,5 @@
 const config = require('../config/env.config');
+const logger = require('../config/logger.config');
 const {
   AppError,
   ERROR_CODES,
@@ -69,8 +70,13 @@ const errorHandler = (err, req, res, next) => {
   const appError = normalizeError(err);
   const isServerError = appError.statusCode >= 500;
 
+  // Errores esperados (4xx) -> warning. Errores inesperados (5xx) -> error con stack.
+  const summary = `${req.method} ${req.originalUrl} -> ${appError.statusCode} ${appError.code}: ${appError.message}`;
   if (isServerError) {
-    console.error(`[error] ${req.method} ${req.originalUrl}`, err.stack || err);
+    const original = appError.cause || err;
+    logger.error(summary, { stack: original.stack || String(original) });
+  } else {
+    logger.warning(summary);
   }
 
   // En producción no se expone el mensaje ni el detalle de errores 5xx.

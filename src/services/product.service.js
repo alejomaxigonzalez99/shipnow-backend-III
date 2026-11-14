@@ -1,4 +1,5 @@
 const ProductRepository = require('../repositories/product.repository');
+const logger = require('../config/logger.config');
 const {
   ProductNotFoundError,
   MissingFieldsError,
@@ -52,7 +53,9 @@ class ProductService {
     assertValidProduct(data);
 
     const stock = data.stock ?? 0;
-    return ProductRepository.create({ ...data, stock, status: resolveStatus(stock) });
+    const product = await ProductRepository.create({ ...data, stock, status: resolveStatus(stock) });
+    logger.info(`Producto creado: ${product._id} (${product.name})`);
+    return product;
   }
 
   static async update(id, data) {

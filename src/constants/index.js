@@ -73,6 +73,42 @@ const MOCK_QTY_REASONS = Object.freeze({
   OUT_OF_RANGE: 'OUT_OF_RANGE',
 });
 
+// Niveles de log (menor número = más severo). `error` y `fatal` van al archivo de errores.
+const LOG_LEVELS = Object.freeze({
+  fatal: 0,
+  error: 1,
+  warning: 2,
+  info: 3,
+  http: 4,
+  debug: 5,
+});
+
+const LOG_COLORS = Object.freeze({
+  fatal: 'bold white redBG',
+  error: 'red',
+  warning: 'yellow',
+  info: 'green',
+  http: 'magenta',
+  debug: 'blue',
+});
+
+// Nivel mínimo que se registra según NODE_ENV.
+const LOG_LEVEL_BY_ENV = Object.freeze({
+  [NODE_ENVS.DEVELOPMENT]: 'debug',
+  [NODE_ENVS.PRODUCTION]: 'info',
+  [NODE_ENVS.TEST]: 'warning',
+});
+
+const LOG_CONFIG = Object.freeze({
+  DIR_NAME: 'logs',
+  ERROR_FILE: 'error-%DATE%.log',
+  COMBINED_FILE: 'combined-%DATE%.log',
+  DATE_PATTERN: 'YYYY-MM-DD',
+  MAX_SIZE: '10m',
+  MAX_FILES: '14d',
+  TIMESTAMP_FORMAT: 'YYYY-MM-DD HH:mm:ss',
+});
+
 const MOCK_COLLECTIONS = Object.freeze({
   USERS: 'usuarios',
   ORDERS: 'pedidos',
@@ -88,6 +124,10 @@ module.exports = {
   DELIVERY_STATUS,
   NODE_ENVS,
   HTTP_STATUS,
+  LOG_LEVELS,
+  LOG_COLORS,
+  LOG_LEVEL_BY_ENV,
+  LOG_CONFIG,
   MOCK_LIMITS,
   MOCK_QTY_REASONS,
   MOCK_COLLECTIONS,

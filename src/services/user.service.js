@@ -1,5 +1,6 @@
 const bcrypt = require('bcryptjs');
 const UserRepository = require('../repositories/user.repository');
+const logger = require('../config/logger.config');
 const {
   UserNotFoundError,
   MissingFieldsError,
@@ -37,7 +38,9 @@ class UserService {
     if (existing) throw new EmailAlreadyExistsError(email);
 
     const hashed = await bcrypt.hash(password, SALT_ROUNDS);
-    return UserRepository.create({ name, email, password: hashed, role });
+    const user = await UserRepository.create({ name, email, password: hashed, role });
+    logger.info(`Usuario creado: ${user._id} (rol ${user.role})`);
+    return user;
   }
 
   static async update(id, data) {

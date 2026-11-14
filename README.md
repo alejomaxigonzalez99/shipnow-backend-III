@@ -35,18 +35,20 @@ Si falta alguna variable (`PORT`, `MONGODB_URI` o `NODE_ENV`), la app **no arran
 src/
 ├── config/
 │   ├── env.config.js        # Único lugar que lee process.env (valida y exporta config)
-│   └── db.config.js         # Conexión a MongoDB
+│   ├── db.config.js         # Conexión a MongoDB
+│   └── logger.config.js     # Logger Winston centralizado (niveles, formato, archivos, rotación)
 ├── constants/index.js       # Objetos congelados: roles, estados y prioridades de pedido/entrega, HTTP_STATUS, límites de mocks
 ├── models/                  # Solo esquemas Mongoose (User, Product, Order, Delivery)
 ├── errors/                  # Errores de dominio + diccionario de errores
-├── middlewares/             # Manejador global de errores y asyncHandler
+├── middlewares/             # Manejador global de errores, logger de requests y asyncHandler
 ├── repositories/            # Acceso a datos (única capa que usa los modelos)
 ├── services/                # Lógica de negocio (incluye mock.service.js)
 ├── controllers/             # Manejo de req/res y status codes
-├── routes/                  # Solo mapean rutas → métodos del controller (incluye /api/orders y /api/mocks)
+├── routes/                  # Solo mapean rutas → métodos del controller (incluye /api/orders, /api/mocks y /api/logger)
 ├── utils/                   # Utilidades (generación de ObjectId)
 ├── app.js                   # Express, rutas y middleware de errores
 └── server.js                # Punto de entrada
+logs/                        # Archivos de log generados (ignorados por Git, solo se versiona .gitkeep)
 ```
 
 ## Endpoints
@@ -61,7 +63,9 @@ src/
 | GET/POST/PUT/DELETE | `/api/users[/:id]` | CRUD de usuarios (el password nunca se devuelve) |
 | GET | `/api/orders?status=PENDING` | Lista pedidos (filtro opcional por estado) |
 | GET | `/api/orders/:id` | Detalle de un pedido |
+| POST | `/api/orders` | Crea un pedido (`user`, `items[]`, `shippingAddress`, `priority` opcional); el total se calcula en el servidor |
 | PATCH | `/api/orders/:id/status` | Cambia el estado (body `{ "status": "CONFIRMED" }`); solo transiciones válidas |
+| GET | `/api/logger/test` | Herramienta interna: emite un log por cada nivel (ver *Logging*) |
 
 ## Mocking y carga de datos de prueba (`/api/mocks`)
 
@@ -236,6 +240,80 @@ curl -i "localhost:3000/api/orders?status=XX"                                # 4
 
 Para probar `EMAIL_ALREADY_EXISTS` creá el mismo usuario dos veces (`POST /api/users`), y para `INVALID_STATUS_TRANSITION` primero generá datos con `POST /api/mocks/seed?qty=10`, tomá el `_id` de un pedido `PENDING` con `GET /api/orders?status=PENDING` y probá `PATCH /api/orders/<id>/status` con `{"status":"DELIVERED"}`.
 
+## Logging y monitoreo básico
+
+Se usa [**Winston**](https://github.com/winstonjs/winston) con [`winston-daily-rotate-file`](https://github.com/winstonjs/winston-daily-rotate-file). La configuración vive en un único módulo, `src/config/logger.config.js`, y se usa desde cualquier archivo sin repetir configuración:
+
+```js
+const logger = require('../config/logger.config');
+logger.info('Pedido creado');
+logger.warning('Pedido sin repartidor asignado');
+```
+
+Formato de cada línea (consola y archivo): `fecha hora [nivel] mensaje`
+
+```
+2026-11-14 12:33:55 [info]    Pedido creado: 64b1... (usuario 64a0..., total 20, prioridad NORMAL)
+2026-11-14 12:33:55 [warning] GET /api/nada -> 404 ROUTE_NOT_FOUND: Ruta no encontrada: GET /api/nada
+2026-11-14 12:33:55 [error]   POST /api/mocks/seed?qty=3 -> 500 MOCK_SEED_FAILED: Falló la inserción en la colección "pedidos"
+```
+
+### Niveles
+
+De más a menos severo: `fatal` > `error` > `warning` > `info` > `http` > `debug`.
+
+| Nivel | Se usa para |
+|-------|-------------|
+| `fatal` | Fallas críticas: variables de entorno inválidas, no poder conectar a MongoDB al iniciar, excepciones no capturadas. El proceso termina |
+| `error` | Errores inesperados del servidor (5xx), con stack trace; falla de carga de mocks |
+| `warning` | Errores esperados/de negocio (4xx: pedido no encontrado, `qty` inválida, ruta inexistente), rollback de seed, conexión a MongoDB perdida |
+| `info` | Eventos normales: servidor iniciado, conexión a MongoDB, pedido/usuario/producto creado, seed completado |
+| `http` | Una línea por request: método, URL, status y duración |
+| `debug` | Detalle de desarrollo (ej. generación de datos mock) |
+
+### Comportamiento por entorno (`NODE_ENV`)
+
+| Entorno | Nivel mínimo | Consola | Archivos |
+|---------|--------------|---------|----------|
+| `development` | `debug` (todo) | Sí, con colores | Sí |
+| `production` | `info` (sin `debug` ni `http`) | Sí | Sí |
+| `test` | `warning` | Sí | No |
+
+El nivel se deriva de `NODE_ENV`, que se lee solo en `src/config/env.config.js`.
+
+### Integración con el manejo de errores
+
+El middleware global de errores registra cada error antes de responder: los **4xx (esperados)** como `warning` y los **5xx (inesperados)** como `error` con el stack trace. La respuesta al cliente no cambia (sigue siendo la estructura uniforme del módulo anterior). Las fallas **fatales** se registran en `server.js` (configuración inválida, conexión inicial a MongoDB, `uncaughtException`/`unhandledRejection`) y luego el proceso termina con código 1.
+
+### Archivos de log y rotación
+
+Se guardan en la carpeta `logs/` de la raíz del proyecto:
+
+| Archivo | Contenido |
+|---------|-----------|
+| `logs/error-AAAA-MM-DD.log` | **Solo** `error` y `fatal` |
+| `logs/combined-AAAA-MM-DD.log` | Todos los niveles activos del entorno |
+
+Rotación: un archivo nuevo por día, y también si un archivo supera **10 MB**; los archivos antiguos se comprimen (`.gz`) y se conservan **14 días**.
+
+**Git:** `.gitignore` ignora `logs/*` (y `*.log`, `node_modules/`, `.env`). Solo se versiona `logs/.gitkeep` para que la carpeta exista en el repositorio.
+
+### Cómo probar el logger
+
+1. Iniciá la app (`npm run dev`) y llamá al endpoint de prueba:
+   ```bash
+   curl localhost:3000/api/logger/test
+   ```
+   Emite un mensaje por cada nivel (`debug`, `http`, `info`, `warning`, `error`, `fatal`) y responde qué niveles quedaron registrados en el entorno actual.
+2. Mirá la consola de la app: aparecen los 6 niveles en desarrollo, y solo `info`, `warning`, `error` y `fatal` con `NODE_ENV=production`.
+3. Revisá los archivos:
+   ```bash
+   cat logs/error-*.log      # solo error y fatal
+   cat logs/combined-*.log   # historial completo
+   ```
+4. Probá logs reales: `curl "localhost:3000/api/mocks/users?qty=-5"` (warning), `curl localhost:3000/api/nada` (warning), o `POST /api/orders` para ver el `info` de pedido creado.
+5. Falla fatal: borrá `MONGODB_URI` del `.env` y ejecutá `npm start`; queda un `[fatal]` en consola y en `logs/error-*.log`.
+
 ## ¿Por qué separé Service y Repository?
 
 - **Repository**: es la única capa que conoce Mongoose. Solo expone operaciones de datos (`getAll`, `getById`, `create`, ...). Si mañana cambia la base de datos o el ODM, solo se toca esta capa.
@@ -250,3 +328,4 @@ Esta separación hace que cada capa tenga una única responsabilidad, sea fácil
 - No hay strings mágicos: estados, roles, entornos y códigos HTTP salen de `src/constants`.
 - Los modelos solo definen esquema; no tienen lógica de controladores.
 - Ningún controller, router ni service responde errores directamente: todo pasa por el middleware global.
+- No quedan `console.log`/`console.error` en el código: todo mensaje del servidor pasa por el logger.

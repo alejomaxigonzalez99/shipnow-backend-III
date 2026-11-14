@@ -1,6 +1,7 @@
 const bcrypt = require('bcryptjs');
 const { fakerES: faker } = require('@faker-js/faker');
 const config = require('../config/env.config');
+const logger = require('../config/logger.config');
 const UserRepository = require('../repositories/user.repository');
 const OrderRepository = require('../repositories/order.repository');
 const DeliveryRepository = require('../repositories/delivery.repository');
@@ -117,11 +118,13 @@ class MockService {
 
   static generateUsers(rawQty) {
     const qty = MockService.parseQty(rawQty);
+    logger.debug(`Generando ${qty} usuarios mock (sin guardar)`);
     return Array.from({ length: qty }, () => buildMockUser(randomUserRole()));
   }
 
   static generateCouriers(rawQty) {
     const qty = MockService.parseQty(rawQty);
+    logger.debug(`Generando ${qty} repartidores mock (sin guardar)`);
     return Array.from({ length: qty }, () => buildMockUser(USER_ROLES.COURIER));
   }
 
@@ -129,6 +132,7 @@ class MockService {
   // (cada uno de un cliente) y una entrega por cada pedido que corresponda.
   static generateDataset(rawQty) {
     const qty = MockService.parseQty(rawQty);
+    logger.debug(`Generando dataset mock (qty=${qty}, sin guardar)`);
     const customers = Array.from({ length: qty }, () => buildMockUser(USER_ROLES.CUSTOMER));
     const couriers = Array.from({ length: Math.ceil(qty / 3) }, () =>
       buildMockUser(USER_ROLES.COURIER)
@@ -154,7 +158,10 @@ class MockService {
   // ---------- Carga a MongoDB ----------
 
   static assertSeedAllowed() {
-    if (config.IS_PRODUCTION) throw new MockSeedForbiddenError();
+    if (config.IS_PRODUCTION) {
+      logger.warning('Intento de cargar datos de prueba en producción: bloqueado');
+      throw new MockSeedForbiddenError();
+    }
   }
 
   static async withPassword(users) {
@@ -167,7 +174,10 @@ class MockService {
     const results = await Promise.allSettled(
       attempted.map(({ repository, ids }) => repository.deleteManyByIds(ids))
     );
-    return results.every((r) => r.status === 'fulfilled');
+    const ok = results.every((r) => r.status === 'fulfilled');
+    if (ok) logger.warning('Seed fallido: se revirtieron los registros insertados');
+    else logger.error('Seed fallido: NO se pudo revertir completamente la inserción (pueden quedar datos huérfanos)');
+    return ok;
   }
 
   // Inserta por etapas (en orden de dependencias). Si una falla, revierte lo anterior
@@ -204,6 +214,7 @@ class MockService {
     const counts = await MockService.insertInOrder([
       { collection: MOCK_COLLECTIONS.USERS, repository: UserRepository, docs: users },
     ]);
+    logger.info(`Seed de usuarios: ${counts[MOCK_COLLECTIONS.USERS]} insertados en "${MOCK_COLLECTIONS.USERS}"`);
     return { insertados: counts[MOCK_COLLECTIONS.USERS], coleccion: MOCK_COLLECTIONS.USERS };
   }
 
@@ -219,6 +230,7 @@ class MockService {
       { collection: MOCK_COLLECTIONS.DELIVERIES, repository: DeliveryRepository, docs: dataset.deliveries },
     ]);
     const insertados = Object.values(colecciones).reduce((a, b) => a + b, 0);
+    logger.info(`Seed completo: ${insertados} registros insertados ${JSON.stringify(colecciones)}`);
     return { insertados, colecciones, passwordDePrueba: MOCK_PASSWORD };
   }
 }

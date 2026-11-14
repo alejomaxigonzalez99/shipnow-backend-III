@@ -1,3 +1,7 @@
 node_modules/
 .env
 *.log
+
+# Logs generados por la aplicación (se conserva la carpeta con .gitkeep)
+logs/*
+!logs/.gitkeep
