@@ -19,6 +19,10 @@ class UserRepository {
     return safeUser;
   }
 
+  static deleteManyByIds(ids) {
+    return User.deleteMany({ _id: { $in: ids } });
+  }
+
   static insertMany(docs) {
     return User.insertMany(docs);
   }

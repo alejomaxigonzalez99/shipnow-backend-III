@@ -1,51 +1,32 @@
 const UserService = require('../services/user.service');
+const asyncHandler = require('../middlewares/async-handler');
 const { HTTP_STATUS } = require('../constants');
 
 class UserController {
-  static async getAll(req, res, next) {
-    try {
-      const users = await UserService.getAll();
-      res.status(HTTP_STATUS.OK).json({ status: 'success', payload: users });
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getAll = asyncHandler(async (req, res) => {
+    const users = await UserService.getAll();
+    res.status(HTTP_STATUS.OK).json({ status: 'success', payload: users });
+  });
 
-  static async getById(req, res, next) {
-    try {
-      const user = await UserService.getById(req.params.id);
-      res.status(HTTP_STATUS.OK).json({ status: 'success', payload: user });
-    } catch (error) {
-      next(error);
-    }
-  }
+  static getById = asyncHandler(async (req, res) => {
+    const user = await UserService.getById(req.params.id);
+    res.status(HTTP_STATUS.OK).json({ status: 'success', payload: user });
+  });
 
-  static async create(req, res, next) {
-    try {
-      const user = await UserService.create(req.body);
-      res.status(HTTP_STATUS.CREATED).json({ status: 'success', payload: user });
-    } catch (error) {
-      next(error);
-    }
-  }
+  static create = asyncHandler(async (req, res) => {
+    const user = await UserService.create(req.body);
+    res.status(HTTP_STATUS.CREATED).json({ status: 'success', payload: user });
+  });
 
-  static async update(req, res, next) {
-    try {
-      const user = await UserService.update(req.params.id, req.body);
-      res.status(HTTP_STATUS.OK).json({ status: 'success', payload: user });
-    } catch (error) {
-      next(error);
-    }
-  }
+  static update = asyncHandler(async (req, res) => {
+    const user = await UserService.update(req.params.id, req.body);
+    res.status(HTTP_STATUS.OK).json({ status: 'success', payload: user });
+  });
 
-  static async delete(req, res, next) {
-    try {
-      await UserService.delete(req.params.id);
-      res.status(HTTP_STATUS.OK).json({ status: 'success', message: 'Usuario eliminado' });
-    } catch (error) {
-      next(error);
-    }
-  }
+  static delete = asyncHandler(async (req, res) => {
+    await UserService.delete(req.params.id);
+    res.status(HTTP_STATUS.OK).json({ status: 'success', message: 'Usuario eliminado' });
+  });
 }
 
 module.exports = UserController;

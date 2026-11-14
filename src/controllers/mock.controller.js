@@ -1,15 +1,13 @@
 const MockService = require('../services/mock.service');
+const asyncHandler = require('../middlewares/async-handler');
 const { HTTP_STATUS } = require('../constants');
 
-// Cada handler llama al servicio y responde; los errores van al middleware central.
-const respondWith = (serviceMethod, successStatus = HTTP_STATUS.OK) => async (req, res, next) => {
-  try {
+// Cada handler llama al servicio y responde; los errores los resuelve el middleware global.
+const respondWith = (serviceMethod, successStatus = HTTP_STATUS.OK) =>
+  asyncHandler(async (req, res) => {
     const result = await serviceMethod(req.query.qty);
     res.status(successStatus).json(result);
-  } catch (error) {
-    next(error);
-  }
-};
+  });
 
 class MockController {
   static getUsers = respondWith(MockService.generateUsers);

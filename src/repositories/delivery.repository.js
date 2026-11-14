@@ -9,6 +9,10 @@ class DeliveryRepository {
     return Delivery.findById(id).lean();
   }
 
+  static deleteManyByIds(ids) {
+    return Delivery.deleteMany({ _id: { $in: ids } });
+  }
+
   static insertMany(docs) {
     return Delivery.insertMany(docs);
   }

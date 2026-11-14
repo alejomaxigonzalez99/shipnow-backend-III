@@ -4,15 +4,15 @@ const config = require('../config/env.config');
 const UserRepository = require('../repositories/user.repository');
 const OrderRepository = require('../repositories/order.repository');
 const DeliveryRepository = require('../repositories/delivery.repository');
-const AppError = require('../utils/app-error');
+const { InvalidMockQtyError, MockSeedForbiddenError, MockSeedError } = require('../errors');
 const { newObjectId } = require('../utils/object-id');
 const {
   USER_ROLES,
   ORDER_STATUS,
   ORDER_PRIORITY,
   DELIVERY_STATUS,
-  HTTP_STATUS,
   MOCK_LIMITS,
+  MOCK_QTY_REASONS,
   MOCK_COLLECTIONS,
 } = require('../constants');
 
@@ -97,15 +97,21 @@ const buildMockDelivery = (order, couriers) => {
 // ---------- Servicio ----------
 
 class MockService {
+  // Valida qty (viene de req.query: puede ser string, array, undefined...).
   static parseQty(rawQty) {
-    if (rawQty === undefined || rawQty === '') return MOCK_LIMITS.DEFAULT_QTY;
+    if (rawQty === undefined) return MOCK_LIMITS.DEFAULT_QTY;
+
+    const limits = { min: MOCK_LIMITS.MIN_QTY, max: MOCK_LIMITS.MAX_QTY };
+    const fail = (reason) => {
+      throw new InvalidMockQtyError(reason, rawQty, limits);
+    };
+
+    if (typeof rawQty !== 'string' || rawQty.trim() === '') fail(MOCK_QTY_REASONS.NOT_A_NUMBER);
     const qty = Number(rawQty);
-    if (!Number.isInteger(qty) || qty < MOCK_LIMITS.MIN_QTY || qty > MOCK_LIMITS.MAX_QTY) {
-      throw new AppError(
-        `qty debe ser un entero entre ${MOCK_LIMITS.MIN_QTY} y ${MOCK_LIMITS.MAX_QTY}`,
-        HTTP_STATUS.BAD_REQUEST
-      );
-    }
+    if (!Number.isFinite(qty)) fail(MOCK_QTY_REASONS.NOT_A_NUMBER);
+    if (!Number.isInteger(qty)) fail(MOCK_QTY_REASONS.NOT_INTEGER);
+    if (qty < 0) fail(MOCK_QTY_REASONS.NEGATIVE);
+    if (qty < limits.min || qty > limits.max) fail(MOCK_QTY_REASONS.OUT_OF_RANGE);
     return qty;
   }
 
@@ -148,9 +154,7 @@ class MockService {
   // ---------- Carga a MongoDB ----------
 
   static assertSeedAllowed() {
-    if (config.IS_PRODUCTION) {
-      throw new AppError('La carga de datos de prueba está deshabilitada en producción', HTTP_STATUS.FORBIDDEN);
-    }
+    if (config.IS_PRODUCTION) throw new MockSeedForbiddenError();
   }
 
   static async withPassword(users) {
@@ -158,11 +162,49 @@ class MockService {
     return users.map((u) => ({ ...u, password }));
   }
 
+  // Borra (mejor esfuerzo) lo que se intentó insertar. Devuelve true si todo se pudo revertir.
+  static async rollback(attempted) {
+    const results = await Promise.allSettled(
+      attempted.map(({ repository, ids }) => repository.deleteManyByIds(ids))
+    );
+    return results.every((r) => r.status === 'fulfilled');
+  }
+
+  // Inserta por etapas (en orden de dependencias). Si una falla, revierte lo anterior
+  // y lanza MockSeedError; la respuesta final la arma el middleware global.
+  static async insertInOrder(stages) {
+    const attempted = [];
+    const counts = {};
+
+    for (const { collection, repository, docs } of stages) {
+      if (docs.length === 0) {
+        counts[collection] = 0;
+        continue;
+      }
+      attempted.push({ repository, ids: docs.map((d) => d._id) });
+      try {
+        const inserted = await repository.insertMany(docs);
+        counts[collection] = inserted.length;
+      } catch (error) {
+        const rolledBack = await MockService.rollback(attempted);
+        throw new MockSeedError({
+          collection,
+          rolledBack,
+          reason: config.IS_PRODUCTION ? undefined : error.message,
+          cause: error,
+        });
+      }
+    }
+    return counts;
+  }
+
   static async seedUsers(rawQty) {
     MockService.assertSeedAllowed();
     const users = await MockService.withPassword(MockService.generateUsers(rawQty));
-    const inserted = await UserRepository.insertMany(users);
-    return { insertados: inserted.length, coleccion: MOCK_COLLECTIONS.USERS };
+    const counts = await MockService.insertInOrder([
+      { collection: MOCK_COLLECTIONS.USERS, repository: UserRepository, docs: users },
+    ]);
+    return { insertados: counts[MOCK_COLLECTIONS.USERS], coleccion: MOCK_COLLECTIONS.USERS };
   }
 
   static async seedAll(rawQty) {
@@ -171,19 +213,13 @@ class MockService {
     const users = await MockService.withPassword(dataset.users);
 
     // Orden por dependencias: usuarios -> pedidos -> entregas.
-    const insertedUsers = await UserRepository.insertMany(users);
-    const insertedOrders = await OrderRepository.insertMany(dataset.orders);
-    const insertedDeliveries = dataset.deliveries.length
-      ? await DeliveryRepository.insertMany(dataset.deliveries)
-      : [];
-
-    const colecciones = {
-      [MOCK_COLLECTIONS.USERS]: insertedUsers.length,
-      [MOCK_COLLECTIONS.ORDERS]: insertedOrders.length,
-      [MOCK_COLLECTIONS.DELIVERIES]: insertedDeliveries.length,
-    };
+    const colecciones = await MockService.insertInOrder([
+      { collection: MOCK_COLLECTIONS.USERS, repository: UserRepository, docs: users },
+      { collection: MOCK_COLLECTIONS.ORDERS, repository: OrderRepository, docs: dataset.orders },
+      { collection: MOCK_COLLECTIONS.DELIVERIES, repository: DeliveryRepository, docs: dataset.deliveries },
+    ]);
     const insertados = Object.values(colecciones).reduce((a, b) => a + b, 0);
-    return { insertados, colecciones };
+    return { insertados, colecciones, passwordDePrueba: MOCK_PASSWORD };
   }
 }
 
