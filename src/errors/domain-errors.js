@@ -52,6 +52,24 @@ class InvalidStatusTransitionError extends AppError {
   }
 }
 
+class InvalidCourierError extends AppError {
+  constructor(userId, role) {
+    super(ERROR_CODES.INVALID_COURIER, {
+      message: `El usuario ${userId} tiene rol ${role}; debe tener rol COURIER`,
+      details: { userId, role },
+    });
+  }
+}
+
+class DeliveryCourierRequiredError extends AppError {
+  constructor(id, status) {
+    super(ERROR_CODES.DELIVERY_COURIER_REQUIRED, {
+      message: `La entrega ${id} no tiene repartidor: asignalo antes de pasarla a ${status}`,
+      details: { id, status },
+    });
+  }
+}
+
 // ---------- No encontrado ----------
 
 class RouteNotFoundError extends AppError {
@@ -59,6 +77,12 @@ class RouteNotFoundError extends AppError {
     super(ERROR_CODES.ROUTE_NOT_FOUND, {
       message: `Ruta no encontrada: ${method} ${path}`,
     });
+  }
+}
+
+class DeliveryNotFoundError extends AppError {
+  constructor(id) {
+    super(ERROR_CODES.DELIVERY_NOT_FOUND, { message: `Entrega no encontrada: ${id}`, details: { id } });
   }
 }
 
@@ -123,6 +147,9 @@ module.exports = {
   InvalidRoleError,
   InvalidStatusError,
   InvalidStatusTransitionError,
+  InvalidCourierError,
+  DeliveryCourierRequiredError,
+  DeliveryNotFoundError,
   RouteNotFoundError,
   UserNotFoundError,
   ProductNotFoundError,

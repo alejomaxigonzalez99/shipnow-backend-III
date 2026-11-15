@@ -12,6 +12,7 @@ const {
   ORDER_STATUS,
   ORDER_PRIORITY,
   DELIVERY_STATUS,
+  DELIVERY_STATUSES_REQUIRING_COURIER,
   MOCK_LIMITS,
   MOCK_QTY_REASONS,
   MOCK_COLLECTIONS,
@@ -27,13 +28,6 @@ const DELIVERY_STATUSES_BY_ORDER_STATUS = Object.freeze({
   [ORDER_STATUS.IN_TRANSIT]: [DELIVERY_STATUS.IN_TRANSIT],
   [ORDER_STATUS.DELIVERED]: [DELIVERY_STATUS.DELIVERED],
 });
-
-// Estados de entrega que exigen un repartidor asignado.
-const DELIVERY_STATUSES_WITH_COURIER = Object.freeze([
-  DELIVERY_STATUS.ASSIGNED,
-  DELIVERY_STATUS.IN_TRANSIT,
-  DELIVERY_STATUS.DELIVERED,
-]);
 
 // ---------- Generadores puros (no tocan la base) ----------
 
@@ -82,7 +76,7 @@ const buildMockOrder = (customer) => {
 
 const buildMockDelivery = (order, couriers) => {
   const status = faker.helpers.arrayElement(DELIVERY_STATUSES_BY_ORDER_STATUS[order.status]);
-  const needsCourier = DELIVERY_STATUSES_WITH_COURIER.includes(status);
+  const needsCourier = DELIVERY_STATUSES_REQUIRING_COURIER.includes(status);
   const isDelivered = status === DELIVERY_STATUS.DELIVERED;
 
   return {

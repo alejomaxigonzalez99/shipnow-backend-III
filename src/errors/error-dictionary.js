@@ -10,11 +10,14 @@ const ERROR_CODES = Object.freeze({
   INVALID_ROLE: 'INVALID_ROLE',
   INVALID_STATUS: 'INVALID_STATUS',
   INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
+  INVALID_COURIER: 'INVALID_COURIER',
+  DELIVERY_COURIER_REQUIRED: 'DELIVERY_COURIER_REQUIRED',
   // No encontrado
   ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND',
   USER_NOT_FOUND: 'USER_NOT_FOUND',
   PRODUCT_NOT_FOUND: 'PRODUCT_NOT_FOUND',
   ORDER_NOT_FOUND: 'ORDER_NOT_FOUND',
+  DELIVERY_NOT_FOUND: 'DELIVERY_NOT_FOUND',
   // Conflictos
   EMAIL_ALREADY_EXISTS: 'EMAIL_ALREADY_EXISTS',
   DUPLICATE_KEY: 'DUPLICATE_KEY',
@@ -37,10 +40,14 @@ const ERROR_DICTIONARY = Object.freeze({
   [ERROR_CODES.INVALID_STATUS]: { status: HTTP_STATUS.BAD_REQUEST, message: 'El estado indicado no es válido' },
   [ERROR_CODES.INVALID_STATUS_TRANSITION]: { status: HTTP_STATUS.CONFLICT, message: 'La transición de estado no está permitida' },
 
+  [ERROR_CODES.INVALID_COURIER]: { status: HTTP_STATUS.BAD_REQUEST, message: 'El usuario indicado no es un repartidor' },
+  [ERROR_CODES.DELIVERY_COURIER_REQUIRED]: { status: HTTP_STATUS.CONFLICT, message: 'La entrega necesita un repartidor asignado para pasar a ese estado' },
+
   [ERROR_CODES.ROUTE_NOT_FOUND]: { status: HTTP_STATUS.NOT_FOUND, message: 'Ruta no encontrada' },
   [ERROR_CODES.USER_NOT_FOUND]: { status: HTTP_STATUS.NOT_FOUND, message: 'Usuario no encontrado' },
   [ERROR_CODES.PRODUCT_NOT_FOUND]: { status: HTTP_STATUS.NOT_FOUND, message: 'Producto no encontrado' },
   [ERROR_CODES.ORDER_NOT_FOUND]: { status: HTTP_STATUS.NOT_FOUND, message: 'Pedido no encontrado' },
+  [ERROR_CODES.DELIVERY_NOT_FOUND]: { status: HTTP_STATUS.NOT_FOUND, message: 'Entrega no encontrada' },
 
   [ERROR_CODES.EMAIL_ALREADY_EXISTS]: { status: HTTP_STATUS.CONFLICT, message: 'El email ya está registrado' },
   [ERROR_CODES.DUPLICATE_KEY]: { status: HTTP_STATUS.CONFLICT, message: 'Ya existe un registro con esos datos' },
