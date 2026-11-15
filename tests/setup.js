@@ -1,4 +1,6 @@
 const mongoose = require('mongoose');
+const fs = require('fs/promises');
+const { UPLOAD_ROOT } = require('../src/config/upload.config');
 const config = require('../src/config/env.config');
 
 const User = require('../src/models/user.model');
@@ -24,6 +26,10 @@ exports.mochaHooks = {
 
   beforeEach: async function () {
     await Promise.all(models.map((model) => model.deleteMany({})));
+  },
+
+  afterEach: async function () {
+    await fs.rm(UPLOAD_ROOT, { recursive: true, force: true });
   },
 
   afterAll: async function () {

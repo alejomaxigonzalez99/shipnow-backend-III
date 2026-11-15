@@ -379,6 +379,64 @@ Esta separación hace que cada capa tenga una única responsabilidad, sea fácil
 - Ningún controller, router ni service responde errores directamente: todo pasa por el middleware global.
 - No quedan `console.log`/`console.error` en el código: todo mensaje del servidor pasa por el logger.
 
+
+## Carga de documentos y comprobantes (Módulo 7)
+
+La carga se realiza con **Multer** mediante `multipart/form-data`. La configuración está centralizada en `src/config/upload.config.js`; los routers solo conectan el middleware con los controladores.
+
+### Endpoints
+
+| Método | Ruta | Campo de archivo | Campos adicionales |
+|--------|------|------------------|--------------------|
+| POST | `/api/users/:id/documents` | `file` | `documentType` (opcional: `IDENTITY`, `DRIVER_LICENSE`, `OTHER`) |
+| POST | `/api/deliveries/:id/receipt` | `file` | Ninguno |
+
+Formatos permitidos: PDF, JPG/JPEG, PNG y WEBP. Tamaño máximo: **5 MB**. Se admite un único archivo por petición.
+
+Ejemplo de carga de documento:
+
+```bash
+curl -X POST http://localhost:3000/api/users/USER_ID/documents \
+  -F "file=@./dni.pdf;type=application/pdf" \
+  -F "documentType=IDENTITY"
+```
+
+Ejemplo de comprobante:
+
+```bash
+curl -X POST http://localhost:3000/api/deliveries/DELIVERY_ID/receipt \
+  -F "file=@./comprobante.pdf;type=application/pdf"
+```
+
+### Almacenamiento y metadatos
+
+Los archivos se guardan en `uploads/user-documents/` o `uploads/delivery-receipts/`, con nombres únicos generados por el servidor. La carpeta `uploads/` está excluida de Git. MongoDB almacena únicamente los metadatos: nombre original, nombre generado, ruta relativa, MIME type, tamaño, tipo de documento y fecha de carga.
+
+- `User.documents`: historial de documentos asociados al usuario.
+- `Delivery.receipt`: comprobante asociado a la entrega.
+
+Si la entidad no existe, el tipo de documento es inválido o falla la persistencia de metadatos, se elimina el archivo recién cargado para evitar archivos huérfanos.
+
+### Validaciones y errores
+
+Los errores usan el mismo formato centralizado de la API:
+
+| Código | HTTP | Motivo |
+|--------|------|--------|
+| `FILE_REQUIRED` | 400 | No se envió el campo `file` |
+| `FILE_TYPE_INVALID` | 400 | Extensión o MIME type no permitido |
+| `FILE_FIELD_INVALID` | 400 | Campo distinto de `file` o más de un archivo |
+| `DOCUMENT_TYPE_INVALID` | 400 | Tipo de documento no permitido |
+| `FILE_TOO_LARGE` | 413 | Archivo mayor a 5 MB |
+| `USER_NOT_FOUND` / `DELIVERY_NOT_FOUND` | 404 | Entidad inexistente |
+| `FILE_UPLOAD_FAILED` | 500 | Error al guardar o asociar el archivo |
+
+Los eventos de carga exitosa, comprobantes asociados e intentos de tipos no permitidos quedan registrados con Winston. La documentación interactiva está disponible en `/api/docs` y describe las peticiones `multipart/form-data`.
+
+### Pruebas
+
+La suite incluye pruebas para carga exitosa de documentos y comprobantes, archivo faltante, tipo de documento inválido, entidad inexistente y formato no permitido. Ejecutar con `npm test`.
+
 ## Testing funcional
 
 Las pruebas automatizadas utilizan Mocha, Chai y Supertest.
@@ -396,6 +454,7 @@ Ejecutar la suite completa:
 - `tests/mocks/`: generación, validación e inserción de datos simulados.
 - `tests/logger/`: endpoint de prueba del sistema de logging.
 - `tests/docs/`: especificación OpenAPI y documentación Swagger.
+- `tests/uploads/`: carga de documentos y comprobantes, validaciones y limpieza de archivos.
 - `tests/setup.js`: conexión, limpieza y desconexión de MongoDB.
 
 ### Entorno de testing

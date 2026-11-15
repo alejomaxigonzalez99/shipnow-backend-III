@@ -8,6 +8,7 @@ const { ordersPaths } = require('./paths/orders.docs');
 const { deliveriesPaths } = require('./paths/deliveries.docs');
 const { mocksPaths } = require('./paths/mocks.docs');
 const { loggerPaths } = require('./paths/logger.docs');
+const { uploadsPaths } = require('./paths/uploads.docs');
 
 const DESCRIPTION = `
 API REST de **ShipNow**, un sistema de gestión de envíos: usuarios (clientes, repartidores y administradores), productos, pedidos y entregas.
@@ -30,8 +31,9 @@ const TAGS = [
   { name: 'Users', description: 'Gestión de usuarios. Roles: ADMIN, CUSTOMER, COURIER (repartidor).' },
   { name: 'Products', description: 'Catálogo de productos y su stock.' },
   { name: 'Orders', description: 'Pedidos: creación, consulta y cambios de estado.' },
-  { name: 'Deliveries', description: 'Entregas asociadas a pedidos: consulta, asignación de repartidor y cambios de estado.' },
+  { name: 'Deliveries', description: 'Entregas asociadas a pedidos: consulta, asignación de repartidor, comprobantes y cambios de estado.' },
   { name: 'Mocks', description: 'Generación de datos simulados (sin guardar) y carga de datos de prueba en MongoDB.' },
+  { name: 'Uploads', description: 'Carga de documentos de usuarios y comprobantes de entrega mediante multipart/form-data.' },
   { name: 'Logger', description: 'Herramienta interna para validar la configuración de logs. No es funcionalidad de negocio.' },
 ];
 
@@ -49,6 +51,7 @@ const buildSpec = () => ({
     ...productsPaths,
     ...ordersPaths,
     ...deliveriesPaths,
+    ...uploadsPaths,
     ...mocksPaths,
     ...loggerPaths,
   },

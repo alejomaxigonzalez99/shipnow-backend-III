@@ -13,6 +13,14 @@ class DeliveryRepository {
     return Delivery.findByIdAndUpdate(id, data, { new: true, runValidators: true }).lean();
   }
 
+  static addReceipt(id, receipt) {
+    return Delivery.findByIdAndUpdate(
+      id,
+      { $set: { receipt } },
+      { new: true, runValidators: true }
+    ).lean();
+  }
+
   static deleteManyByIds(ids) {
     return Delivery.deleteMany({ _id: { $in: ids } });
   }

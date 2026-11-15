@@ -18,6 +18,11 @@ class UserController {
     res.status(HTTP_STATUS.CREATED).json({ status: 'success', payload: user });
   });
 
+  static uploadDocument = asyncHandler(async (req, res) => {
+    const user = await UserService.addDocument(req.params.id, req.file, req.body.documentType);
+    res.status(HTTP_STATUS.CREATED).json({ status: 'success', payload: user });
+  });
+
   static update = asyncHandler(async (req, res) => {
     const user = await UserService.update(req.params.id, req.body);
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: user });

@@ -12,6 +12,15 @@ const deliverySchema = new mongoose.Schema(
     },
     estimatedAt: { type: Date },
     deliveredAt: { type: Date, default: null },
+    receipt: {
+      originalName: { type: String },
+      filename: { type: String },
+      path: { type: String },
+      mimeType: { type: String },
+      size: { type: Number, min: 1 },
+      documentType: { type: String, default: 'DELIVERY_RECEIPT' },
+      uploadedAt: { type: Date },
+    },
   },
   { timestamps: true }
 );

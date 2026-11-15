@@ -140,6 +140,40 @@ class MockSeedError extends AppError {
   }
 }
 
+
+class FileRequiredError extends AppError {
+  constructor() { super(ERROR_CODES.FILE_REQUIRED); }
+}
+class InvalidFileTypeError extends AppError {
+  constructor(mimeType, extension) {
+    super(ERROR_CODES.FILE_TYPE_INVALID, {
+      message: `Tipo de archivo no permitido: ${mimeType || 'desconocido'} (${extension || 'sin extensión'})`,
+      details: { mimeType, extension },
+    });
+  }
+}
+class FileTooLargeError extends AppError {
+  constructor(maxBytes) {
+    super(ERROR_CODES.FILE_TOO_LARGE, { details: { maxBytes } });
+  }
+}
+class InvalidFileFieldError extends AppError {
+  constructor(field) {
+    super(ERROR_CODES.FILE_FIELD_INVALID, { details: { received: field, expected: 'file' } });
+  }
+}
+class InvalidDocumentTypeError extends AppError {
+  constructor(received, allowed) {
+    super(ERROR_CODES.DOCUMENT_TYPE_INVALID, {
+      message: `Tipo de documento inválido: "${received}". Permitidos: ${allowed.join(', ')}`,
+      details: { received, allowed },
+    });
+  }
+}
+class FileUploadFailedError extends AppError {
+  constructor(cause) { super(ERROR_CODES.FILE_UPLOAD_FAILED, { cause }); }
+}
+
 module.exports = {
   ValidationError,
   MissingFieldsError,
@@ -158,4 +192,10 @@ module.exports = {
   InvalidMockQtyError,
   MockSeedForbiddenError,
   MockSeedError,
+  FileRequiredError,
+  InvalidFileTypeError,
+  FileTooLargeError,
+  InvalidFileFieldError,
+  InvalidDocumentTypeError,
+  FileUploadFailedError,
 };

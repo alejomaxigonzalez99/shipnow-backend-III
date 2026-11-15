@@ -19,6 +19,14 @@ class UserRepository {
     return safeUser;
   }
 
+  static addDocument(id, document) {
+    return User.findByIdAndUpdate(
+      id,
+      { $push: { documents: document } },
+      { new: true, runValidators: true }
+    ).select('-password').lean();
+  }
+
   static deleteManyByIds(ids) {
     return User.deleteMany({ _id: { $in: ids } });
   }

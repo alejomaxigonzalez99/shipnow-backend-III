@@ -7,6 +7,9 @@ const {
   RouteNotFoundError,
   InvalidIdError,
   ValidationError,
+  FileTooLargeError,
+  InvalidFileFieldError,
+  FileUploadFailedError,
 } = require('../errors');
 
 const DB_UNAVAILABLE_ERRORS = new Set([
@@ -24,6 +27,17 @@ const MONGO_DUPLICATE_KEY = 11000;
  */
 const normalizeError = (err) => {
   if (err instanceof AppError) return err;
+
+  // Errores específicos de Multer (multipart/form-data).
+  if (err.name === 'MulterError') {
+    if (err.code === 'LIMIT_FILE_SIZE') return new FileTooLargeError(5 * 1024 * 1024);
+    if (err.code === 'LIMIT_UNEXPECTED_FILE') return new InvalidFileFieldError(err.field);
+    return new InvalidFileFieldError(err.field || err.code);
+  }
+
+  if (['EACCES', 'ENOSPC', 'EROFS', 'ENOENT'].includes(err.code)) {
+    return new FileUploadFailedError(err);
+  }
 
   // JSON mal formado en el body
   if (err.type === 'entity.parse.failed') {

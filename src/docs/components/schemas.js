@@ -7,6 +7,8 @@ const {
   DELIVERY_STATUS,
   MOCK_QTY_REASONS,
   LOG_LEVELS,
+  USER_DOCUMENT_TYPES,
+  UPLOAD_CONFIG,
 } = require('../../constants');
 const { ref } = require('../helpers');
 
@@ -61,6 +63,21 @@ const schemas = {
     },
   },
 
+  // ---------- Uploads ----------
+  FileMetadata: {
+    type: 'object',
+    required: ['originalName', 'filename', 'path', 'mimeType', 'size', 'documentType', 'uploadedAt'],
+    properties: {
+      originalName: { type: 'string', example: 'dni.pdf' },
+      filename: { type: 'string', example: '1731600000000-uuid.pdf' },
+      path: { type: 'string', example: 'uploads/user-documents/1731600000000-uuid.pdf' },
+      mimeType: { type: 'string', enum: Object.keys(UPLOAD_CONFIG.ALLOWED_MIME_TYPES) },
+      size: { type: 'integer', minimum: 1, example: 120000 },
+      documentType: { type: 'string', enum: [...Object.values(USER_DOCUMENT_TYPES), 'DELIVERY_RECEIPT'] },
+      uploadedAt: { type: 'string', format: 'date-time' },
+    },
+  },
+
   // ---------- Users ----------
   User: {
     type: 'object',
@@ -70,6 +87,7 @@ const schemas = {
       name: { type: 'string', example: 'Ana Pérez' },
       email: { type: 'string', format: 'email', example: 'ana.perez@test.com' },
       role: { type: 'string', enum: Object.values(USER_ROLES), example: USER_ROLES.CUSTOMER },
+      documents: { type: 'array', items: ref('FileMetadata') },
       ...timestamps,
     },
   },
@@ -186,6 +204,7 @@ const schemas = {
       status: { type: 'string', enum: Object.values(DELIVERY_STATUS), example: DELIVERY_STATUS.PENDING },
       estimatedAt: { type: 'string', format: 'date-time' },
       deliveredAt: { type: 'string', format: 'date-time', nullable: true },
+      receipt: { allOf: [ref('FileMetadata')], nullable: true },
       ...timestamps,
     },
   },

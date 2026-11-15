@@ -6,3 +6,6 @@ node_modules/
 logs/*
 !logs/.gitkeep
 .env.test
+
+# Archivos cargados por usuarios (no versionar)
+/uploads/

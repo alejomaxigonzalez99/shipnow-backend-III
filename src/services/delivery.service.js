@@ -1,4 +1,5 @@
 const DeliveryRepository = require('../repositories/delivery.repository');
+const fs = require('fs/promises');
 const UserService = require('./user.service');
 const logger = require('../config/logger.config');
 const {
@@ -8,6 +9,9 @@ const {
   InvalidCourierError,
   DeliveryCourierRequiredError,
   MissingFieldsError,
+  FileRequiredError,
+  FileUploadFailedError,
+  AppError,
 } = require('../errors');
 const {
   DELIVERY_STATUS,
@@ -36,6 +40,29 @@ class DeliveryService {
 
   // Regla de negocio: el repartidor debe existir y tener rol COURIER.
   // La entrega pasa a ASSIGNED.
+  static async addReceipt(id, file) {
+    if (!file) throw new FileRequiredError();
+    try {
+      await DeliveryService.getById(id);
+      const { buildFileMetadata } = require('../config/upload.config');
+      const metadata = buildFileMetadata(file, 'DELIVERY_RECEIPT');
+      const updated = await DeliveryRepository.addReceipt(id, metadata);
+      if (!updated) throw new DeliveryNotFoundError(id);
+      logger.info(`Comprobante asociado a entrega ${id}: ${metadata.filename}`);
+      return updated;
+    } catch (error) {
+      await fs.unlink(file.path).catch(() => {});
+      if (
+        error instanceof AppError ||
+        error.name === 'CastError' ||
+        error.name === 'MongooseError' ||
+        error.name?.startsWith('Mongo') ||
+        error.code === 11000
+      ) throw error;
+      throw new FileUploadFailedError(error);
+    }
+  }
+
   static async assignCourier(id, courierId) {
     if (!courierId) throw new MissingFieldsError(['courier']);
 

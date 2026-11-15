@@ -1,4 +1,5 @@
 const bcrypt = require('bcryptjs');
+const fs = require('fs/promises');
 const UserRepository = require('../repositories/user.repository');
 const logger = require('../config/logger.config');
 const {
@@ -6,8 +7,12 @@ const {
   MissingFieldsError,
   InvalidRoleError,
   EmailAlreadyExistsError,
+  FileRequiredError,
+  InvalidDocumentTypeError,
+  FileUploadFailedError,
+  AppError,
 } = require('../errors');
-const { USER_ROLES } = require('../constants');
+const { USER_ROLES, USER_DOCUMENT_TYPES } = require('../constants');
 
 const SALT_ROUNDS = 10;
 
@@ -25,6 +30,36 @@ class UserService {
     const user = await UserRepository.getById(id);
     if (!user) throw new UserNotFoundError(id);
     return user;
+  }
+
+  static async addDocument(id, file, documentType) {
+    if (!file) throw new FileRequiredError();
+    const allowedTypes = Object.values(USER_DOCUMENT_TYPES);
+    const resolvedType = documentType || USER_DOCUMENT_TYPES.OTHER;
+    if (!allowedTypes.includes(resolvedType)) {
+      await fs.unlink(file.path).catch(() => {});
+      throw new InvalidDocumentTypeError(resolvedType, allowedTypes);
+    }
+
+    try {
+      const user = await UserService.getById(id);
+      const { buildFileMetadata } = require('../config/upload.config');
+      const metadata = buildFileMetadata(file, resolvedType);
+      const updated = await UserRepository.addDocument(id, metadata);
+      if (!updated) throw new UserNotFoundError(id);
+      logger.info(`Documento cargado: usuario ${id}, tipo ${resolvedType}, archivo ${metadata.filename}`);
+      return updated;
+    } catch (error) {
+      await fs.unlink(file.path).catch(() => {});
+      if (
+        error instanceof AppError ||
+        error.name === 'CastError' ||
+        error.name === 'MongooseError' ||
+        error.name?.startsWith('Mongo') ||
+        error.code === 11000
+      ) throw error;
+      throw new FileUploadFailedError(error);
+    }
   }
 
   static async create({ name, email, password, role }) {

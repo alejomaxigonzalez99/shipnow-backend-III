@@ -71,6 +71,7 @@ const HTTP_STATUS = Object.freeze({
   FORBIDDEN: 403,
   NOT_FOUND: 404,
   CONFLICT: 409,
+  PAYLOAD_TOO_LARGE: 413,
   INTERNAL_SERVER_ERROR: 500,
   SERVICE_UNAVAILABLE: 503,
 });
@@ -125,6 +126,22 @@ const LOG_CONFIG = Object.freeze({
   TIMESTAMP_FORMAT: 'YYYY-MM-DD HH:mm:ss',
 });
 
+const USER_DOCUMENT_TYPES = Object.freeze({
+  IDENTITY: 'IDENTITY',
+  DRIVER_LICENSE: 'DRIVER_LICENSE',
+  OTHER: 'OTHER',
+});
+
+const UPLOAD_CONFIG = Object.freeze({
+  MAX_FILE_SIZE: 5 * 1024 * 1024,
+  ALLOWED_MIME_TYPES: Object.freeze({
+    'application/pdf': ['.pdf'],
+    'image/jpeg': ['.jpg', '.jpeg'],
+    'image/png': ['.png'],
+    'image/webp': ['.webp'],
+  }),
+});
+
 const MOCK_COLLECTIONS = Object.freeze({
   USERS: 'usuarios',
   ORDERS: 'pedidos',
@@ -149,4 +166,6 @@ module.exports = {
   MOCK_LIMITS,
   MOCK_QTY_REASONS,
   MOCK_COLLECTIONS,
+  USER_DOCUMENT_TYPES,
+  UPLOAD_CONFIG,
 };

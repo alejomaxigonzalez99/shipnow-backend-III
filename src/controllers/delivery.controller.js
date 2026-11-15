@@ -13,6 +13,11 @@ class DeliveryController {
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: delivery });
   });
 
+  static uploadReceipt = asyncHandler(async (req, res) => {
+    const delivery = await DeliveryService.addReceipt(req.params.id, req.file);
+    res.status(HTTP_STATUS.CREATED).json({ status: 'success', payload: delivery });
+  });
+
   static assignCourier = asyncHandler(async (req, res) => {
     const delivery = await DeliveryService.assignCourier(req.params.id, req.body.courier);
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: delivery });

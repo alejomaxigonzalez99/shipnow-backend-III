@@ -12,6 +12,12 @@ const ERROR_CODES = Object.freeze({
   INVALID_STATUS_TRANSITION: 'INVALID_STATUS_TRANSITION',
   INVALID_COURIER: 'INVALID_COURIER',
   DELIVERY_COURIER_REQUIRED: 'DELIVERY_COURIER_REQUIRED',
+  FILE_REQUIRED: 'FILE_REQUIRED',
+  FILE_TYPE_INVALID: 'FILE_TYPE_INVALID',
+  FILE_TOO_LARGE: 'FILE_TOO_LARGE',
+  FILE_FIELD_INVALID: 'FILE_FIELD_INVALID',
+  DOCUMENT_TYPE_INVALID: 'DOCUMENT_TYPE_INVALID',
+  FILE_UPLOAD_FAILED: 'FILE_UPLOAD_FAILED',
   // No encontrado
   ROUTE_NOT_FOUND: 'ROUTE_NOT_FOUND',
   USER_NOT_FOUND: 'USER_NOT_FOUND',
@@ -42,6 +48,12 @@ const ERROR_DICTIONARY = Object.freeze({
 
   [ERROR_CODES.INVALID_COURIER]: { status: HTTP_STATUS.BAD_REQUEST, message: 'El usuario indicado no es un repartidor' },
   [ERROR_CODES.DELIVERY_COURIER_REQUIRED]: { status: HTTP_STATUS.CONFLICT, message: 'La entrega necesita un repartidor asignado para pasar a ese estado' },
+  [ERROR_CODES.FILE_REQUIRED]: { status: HTTP_STATUS.BAD_REQUEST, message: 'Debe adjuntar un archivo en el campo file' },
+  [ERROR_CODES.FILE_TYPE_INVALID]: { status: HTTP_STATUS.BAD_REQUEST, message: 'El tipo de archivo no está permitido' },
+  [ERROR_CODES.FILE_TOO_LARGE]: { status: HTTP_STATUS.PAYLOAD_TOO_LARGE, message: 'El archivo supera el tamaño máximo permitido de 5 MB' },
+  [ERROR_CODES.FILE_FIELD_INVALID]: { status: HTTP_STATUS.BAD_REQUEST, message: 'El campo de archivo debe llamarse file y se admite un único archivo' },
+  [ERROR_CODES.DOCUMENT_TYPE_INVALID]: { status: HTTP_STATUS.BAD_REQUEST, message: 'El tipo de documento no es válido' },
+  [ERROR_CODES.FILE_UPLOAD_FAILED]: { status: HTTP_STATUS.INTERNAL_SERVER_ERROR, message: 'No se pudo guardar el archivo o asociarlo a la entidad' },
 
   [ERROR_CODES.ROUTE_NOT_FOUND]: { status: HTTP_STATUS.NOT_FOUND, message: 'Ruta no encontrada' },
   [ERROR_CODES.USER_NOT_FOUND]: { status: HTTP_STATUS.NOT_FOUND, message: 'Usuario no encontrado' },
