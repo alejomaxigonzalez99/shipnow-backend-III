@@ -378,3 +378,48 @@ Esta separación hace que cada capa tenga una única responsabilidad, sea fácil
 - Los modelos solo definen esquema; no tienen lógica de controladores.
 - Ningún controller, router ni service responde errores directamente: todo pasa por el middleware global.
 - No quedan `console.log`/`console.error` en el código: todo mensaje del servidor pasa por el logger.
+
+## Testing funcional
+
+Las pruebas automatizadas utilizan Mocha, Chai y Supertest.
+
+### Ejecutar las pruebas
+
+Ejecutar la suite completa:
+
+    npm test
+
+### Organización
+
+- `tests/users/`: listado, creación, búsqueda y errores de usuarios.
+- `tests/orders/`: creación, listado, búsqueda y actualización de pedidos.
+- `tests/mocks/`: generación, validación e inserción de datos simulados.
+- `tests/logger/`: endpoint de prueba del sistema de logging.
+- `tests/docs/`: especificación OpenAPI y documentación Swagger.
+- `tests/setup.js`: conexión, limpieza y desconexión de MongoDB.
+
+### Entorno de testing
+
+Las pruebas utilizan una base de datos independiente llamada `shipnow_test`, configurada mediante `.env.test`.
+
+Variables necesarias:
+
+- `PORT`: puerto de la aplicación.
+- `NODE_ENV`: entorno de ejecución, configurado como `test`.
+- `MONGODB_URI`: URI de conexión a la base de testing.
+
+El archivo `.env.test` está excluido del repositorio mediante `.gitignore` para proteger las credenciales.
+
+### Limpieza de datos
+
+Antes de cada prueba se limpian las colecciones User, Product, Order y Delivery. Al finalizar, se realiza una última limpieza y se cierra la conexión.
+
+La aplicación se importa desde `src/app.js`, sin iniciar el servidor HTTP.
+
+### Resultados
+
+Se realizaron dos ejecuciones consecutivas de `npm test`:
+
+- Primera ejecución: 16 pruebas aprobadas.
+- Segunda ejecución: 16 pruebas aprobadas.
+- Total: 0 pruebas fallidas.

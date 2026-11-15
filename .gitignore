@@ -5,3 +5,4 @@ node_modules/
 # Logs generados por la aplicación (se conserva la carpeta con .gitkeep)
 logs/*
 !logs/.gitkeep
+.env.test

@@ -1,4 +1,10 @@
-require('dotenv').config();
+const path = require('path');
+
+const envFile = process.env.NODE_ENV === 'test' ? '.env.test' : '.env';
+
+require('dotenv').config({
+  path: path.resolve(process.cwd(), envFile),
+});
 
 const { NODE_ENVS } = require('../constants');
 
