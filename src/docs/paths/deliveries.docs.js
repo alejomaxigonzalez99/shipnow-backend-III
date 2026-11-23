@@ -35,6 +35,8 @@ const deliveriesPaths = {
       summary: 'Listar entregas',
       operationId: 'listDeliveries',
       parameters: [
+        { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, default: 1 } },
+        { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
         {
           name: 'status',
           in: 'query',

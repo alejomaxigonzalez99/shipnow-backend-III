@@ -20,7 +20,11 @@ const usersPaths = {
     get: {
       tags: [TAG],
       summary: 'Listar usuarios',
-      description: 'Devuelve todos los usuarios. El password nunca se incluye.',
+      description: 'Lista usuarios con paginación. page inicia en 1, limit por defecto 50 y máximo 100. El password nunca se incluye.',
+      parameters: [
+        { name: 'page', in: 'query', required: false, schema: { type: 'integer', minimum: 1, default: 1 } },
+        { name: 'limit', in: 'query', required: false, schema: { type: 'integer', minimum: 1, maximum: 100, default: 50 } },
+      ],
       operationId: 'listUsers',
       responses: {
         200: successResponse('Lista de usuarios', { type: 'array', items: ref('User') }, [userExample]),

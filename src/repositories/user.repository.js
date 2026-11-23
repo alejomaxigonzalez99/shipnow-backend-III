@@ -1,8 +1,8 @@
 const User = require('../models/user.model');
 
 class UserRepository {
-  static getAll() {
-    return User.find().lean();
+  static getAll({ page = 1, limit = 50 } = {}) {
+    return User.find().sort({ _id: -1 }).skip((page - 1) * limit).limit(limit).select('-password').lean();
   }
 
   static getById(id) {

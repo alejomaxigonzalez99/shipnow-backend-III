@@ -47,6 +47,7 @@ const buildSpec = () => ({
   servers: [{ url: `http://localhost:${config.PORT}`, description: 'Servidor local' }],
   tags: TAGS,
   paths: {
+    '/health': { get: { tags: ['Health'], summary: 'Estado de salud de la API', responses: { 200: { description: 'API disponible' } } } },
     ...usersPaths,
     ...productsPaths,
     ...ordersPaths,

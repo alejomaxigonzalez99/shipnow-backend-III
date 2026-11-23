@@ -1,10 +1,11 @@
 const UserService = require('../services/user.service');
 const asyncHandler = require('../middlewares/async-handler');
 const { HTTP_STATUS } = require('../constants');
+const { parsePagination } = require('../utils/pagination');
 
 class UserController {
   static getAll = asyncHandler(async (req, res) => {
-    const users = await UserService.getAll();
+    const users = await UserService.getAll(parsePagination(req.query));
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: users });
   });
 

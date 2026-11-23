@@ -2,7 +2,16 @@ const { expect } = require('chai');
 const request = require('supertest');
 const app = require('../../src/app');
 
-describe('Documentación Swagger', function () {
+describe('Health check y documentación Swagger', function () {
+  it('GET /health - informa estado sin exponer configuración sensible', async function () {
+    const res = await request(app).get('/health');
+    expect(res.status).to.equal(200);
+    expect(res.body).to.include({ status: 'ok', environment: 'test' });
+    expect(res.body.uptime).to.be.a('number');
+    expect(res.body.timestamp).to.be.a('string');
+    expect(res.body).not.to.have.property('MONGODB_URI');
+  });
+
   it('GET /api/docs/openapi.json - debe devolver la especificación OpenAPI', async function () {
     const res = await request(app).get('/api/docs/openapi.json');
 

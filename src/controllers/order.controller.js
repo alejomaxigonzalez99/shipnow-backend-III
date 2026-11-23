@@ -1,10 +1,11 @@
 const OrderService = require('../services/order.service');
 const asyncHandler = require('../middlewares/async-handler');
 const { HTTP_STATUS } = require('../constants');
+const { parsePagination } = require('../utils/pagination');
 
 class OrderController {
   static getAll = asyncHandler(async (req, res) => {
-    const orders = await OrderService.getAll({ status: req.query.status });
+    const orders = await OrderService.getAll({ status: req.query.status, ...parsePagination(req.query) });
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: orders });
   });
 

@@ -33,11 +33,11 @@ const validateItems = (items) => {
 };
 
 class OrderService {
-  static async getAll({ status } = {}) {
+  static async getAll({ status, page = 1, limit = 50 } = {}) {
     if (status !== undefined && !ORDER_STATUSES.includes(status)) {
       throw new InvalidStatusError('pedido', status, ORDER_STATUSES);
     }
-    return OrderRepository.getAll(status ? { status } : {});
+    return OrderRepository.getAll(status ? { status } : {}, { page, limit });
   }
 
   static async getById(id) {

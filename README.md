@@ -16,7 +16,7 @@ cd shipnow
 npm install
 
 # 2. Configurar variables de entorno
-cp .env.example .env
+cp .env.example .env  # Git Bash / Linux / macOS
 # Editar .env y completar los valores, por ejemplo:
 # PORT=3000
 # MONGODB_URI=mongodb://127.0.0.1:27017/shipnow
@@ -482,3 +482,84 @@ Se realizaron dos ejecuciones consecutivas de `npm test`:
 - Primera ejecución: 16 pruebas aprobadas.
 - Segunda ejecución: 16 pruebas aprobadas.
 - Total: 0 pruebas fallidas.
+
+
+---
+
+## Producción, performance y Docker (Módulo 8)
+
+### Performance y listados
+
+Los endpoints `GET /api/users`, `GET /api/orders` y `GET /api/deliveries` aplican paginación en MongoDB mediante `skip` y `limit`, ordenan por `_id` descendente y nunca devuelven la colección completa. Parámetros:
+
+- `page`: página solicitada (por defecto `1`).
+- `limit`: elementos por página (por defecto `50`, máximo `100`).
+- Pedidos y entregas conservan el filtro `status`.
+
+Ejemplos: `GET /api/orders?page=2&limit=20&status=PENDING`, `GET /api/users?limit=10`.
+Las respuestas conservan el formato `payload` como arreglo para compatibilidad con los clientes anteriores.
+
+Las cargas Multer mantienen un máximo de 5 MB, un archivo por petición, límite de campos/partes y lista permitida de PDF/JPEG/PNG/WebP. Los archivos se guardan fuera del código de la aplicación, en `uploads/`, y esa carpeta no se versiona ni se copia a la imagen. En producción debe montarse un volumen persistente o configurarse un almacenamiento externo; el contenedor por sí solo no es almacenamiento permanente.
+
+### Variables de entorno
+
+Copiá `.env.example` a `.env` y completá `PORT`, `NODE_ENV`, `MONGODB_URI` y `LOG_LEVEL`. La aplicación valida las variables críticas y el nivel de logs antes de abrir el puerto. `TRACKING_SERVICE_URL` y `NOTIFICATIONS_SERVICE_URL` son URLs opcionales para futuras integraciones; si se informan, deben ser URLs válidas. ShipNow actualmente no consume esos servicios. No hay JWT implementado en esta API, por lo que no se requiere un secreto JWT.
+
+Valores típicos:
+
+- Desarrollo: `NODE_ENV=development`, `LOG_LEVEL=debug`.
+- Testing: `NODE_ENV=test`, `LOG_LEVEL=warning`, base `shipnow_test`.
+- Producción: `NODE_ENV=production`, `LOG_LEVEL=info`.
+
+Para tests, creá `.env.test` a partir de `.env.test.example` y asegurate de usar exclusivamente una base de datos de prueba llamada `shipnow_test`. Nunca subas `.env`, `.env.test`, claves, credenciales ni cadenas de conexión.
+
+### Ejecución local
+
+```bash
+cp .env.example .env  # Git Bash / Linux / macOS
+npm install
+npm run dev
+```
+
+La API usa el puerto indicado en `PORT` (3000 por defecto). Health check: `http://localhost:3000/health`. Swagger: `http://localhost:3000/api/docs/`.
+
+### Tests
+
+```bash
+cp .env.test.example .env.test  # Git Bash / Linux / macOS
+# Editá MONGODB_URI para apuntar a tu MongoDB de testing (shipnow_test)
+npm install
+npm test
+```
+
+### Docker
+
+Construir imagen:
+
+```bash
+docker build -t shipnow-api:8 .
+```
+
+Ejecutar (desde la carpeta donde está el archivo `.env`):
+
+```bash
+docker run --name shipnow-api --rm -p 3000:3000 --env-file .env -v shipnow-uploads:/app/uploads -v shipnow-logs:/app/logs shipnow-api:8
+```
+
+Si MongoDB corre en tu PC con Docker Desktop, `localhost` dentro del contenedor no apunta a Windows: usá `mongodb://host.docker.internal:27017/shipnow` en `MONGODB_URI`. Si MongoDB está en Atlas, usá la URI correspondiente en el `.env` sin publicarla.
+
+Probar:
+
+```bash
+curl http://localhost:3000/health
+curl http://localhost:3000/api/docs/openapi.json
+curl http://localhost:3000/api/products
+```
+
+El contenedor expone `3000`; si cambiás `PORT`, ajustá también el puerto publicado y la configuración del servicio. El Dockerfile usa Node 22 Alpine, instala solo dependencias de producción, ejecuta como usuario sin privilegios y define health check.
+
+### Endpoints internos y observabilidad
+
+Swagger se mantiene disponible en producción para facilitar la consulta de la API. Los endpoints `/api/mocks/*` y `/api/logger/test` no se montan en `NODE_ENV=production` y responden 404. El endpoint `/health` devuelve únicamente estado, entorno, uptime y timestamp; no expone URI, credenciales ni estado interno de MongoDB.
+
+Winston respeta `LOG_LEVEL`; los archivos rotativos se escriben en `logs/`. En despliegues con contenedores se recomienda recolectar stdout/stderr mediante la plataforma y montar un volumen solo si se necesita conservar archivos. `logs/`, `uploads/`, `coverage/`, `node_modules/`, `.git/` y archivos temporales no deben subirse al repositorio ni copiarse a la imagen.

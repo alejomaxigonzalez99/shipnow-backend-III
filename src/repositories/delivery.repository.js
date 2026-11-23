@@ -1,8 +1,8 @@
 const Delivery = require('../models/delivery.model');
 
 class DeliveryRepository {
-  static getAll(filter = {}) {
-    return Delivery.find(filter).lean();
+  static getAll(filter = {}, { page = 1, limit = 50 } = {}) {
+    return Delivery.find(filter).sort({ _id: -1 }).skip((page - 1) * limit).limit(limit).lean();
   }
 
   static getById(id) {

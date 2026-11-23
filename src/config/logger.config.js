@@ -27,7 +27,7 @@ const resolveNodeEnv = () => {
 
 const nodeEnv = resolveNodeEnv();
 const isTest = nodeEnv === NODE_ENVS.TEST;
-const level = LOG_LEVEL_BY_ENV[nodeEnv];
+const level = (() => { try { return require('./env.config').LOG_LEVEL; } catch { return LOG_LEVEL_BY_ENV[nodeEnv]; } })();
 const logsDir = path.resolve(__dirname, '../..', LOG_CONFIG.DIR_NAME);
 
 winston.addColors(LOG_COLORS);

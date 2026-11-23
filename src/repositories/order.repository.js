@@ -1,8 +1,8 @@
 const Order = require('../models/order.model');
 
 class OrderRepository {
-  static getAll(filter = {}) {
-    return Order.find(filter).lean();
+  static getAll(filter = {}, { page = 1, limit = 50 } = {}) {
+    return Order.find(filter).sort({ _id: -1 }).skip((page - 1) * limit).limit(limit).lean();
   }
 
   static getById(id) {

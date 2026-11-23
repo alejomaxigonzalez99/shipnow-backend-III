@@ -1,10 +1,11 @@
 const DeliveryService = require('../services/delivery.service');
 const asyncHandler = require('../middlewares/async-handler');
 const { HTTP_STATUS } = require('../constants');
+const { parsePagination } = require('../utils/pagination');
 
 class DeliveryController {
   static getAll = asyncHandler(async (req, res) => {
-    const deliveries = await DeliveryService.getAll({ status: req.query.status });
+    const deliveries = await DeliveryService.getAll({ status: req.query.status, ...parsePagination(req.query) });
     res.status(HTTP_STATUS.OK).json({ status: 'success', payload: deliveries });
   });
 

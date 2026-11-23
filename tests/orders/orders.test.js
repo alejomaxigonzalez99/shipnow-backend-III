@@ -45,6 +45,14 @@ describe('API de pedidos', function () {
     expect(res.body.payload).to.be.an('array').with.lengthOf(1);
   });
 
+  it('GET /api/orders?page=1&limit=1 - limita la cantidad de resultados', async function () {
+    await request(app).post('/api/orders').send(orderData());
+    await request(app).post('/api/orders').send(orderData());
+    const res = await request(app).get('/api/orders?page=1&limit=1');
+    expect(res.status).to.equal(200);
+    expect(res.body.payload).to.be.an('array').with.lengthOf(1);
+  });
+
   it('GET /api/orders/:id - debe obtener un pedido', async function () {
     const created = await request(app)
       .post('/api/orders')

@@ -22,8 +22,8 @@ const assertValidRole = (role) => {
 };
 
 class UserService {
-  static getAll() {
-    return UserRepository.getAll();
+  static getAll(pagination = {}) {
+    return UserRepository.getAll(pagination);
   }
 
   static async getById(id) {

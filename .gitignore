@@ -9,3 +9,11 @@ logs/*
 
 # Archivos cargados por usuarios (no versionar)
 /uploads/
+
+.env.*
+!.env.example
+!.env.test.example
+coverage/
+.nyc_output/
+*.tmp
+*.temp

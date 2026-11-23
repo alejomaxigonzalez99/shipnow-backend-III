@@ -25,11 +25,11 @@ const DELIVERY_STATUSES = Object.values(DELIVERY_STATUS);
 const ASSIGNABLE_STATUSES = [DELIVERY_STATUS.PENDING, DELIVERY_STATUS.ASSIGNED];
 
 class DeliveryService {
-  static async getAll({ status } = {}) {
+  static async getAll({ status, page = 1, limit = 50 } = {}) {
     if (status !== undefined && !DELIVERY_STATUSES.includes(status)) {
       throw new InvalidStatusError('entrega', status, DELIVERY_STATUSES);
     }
-    return DeliveryRepository.getAll(status ? { status } : {});
+    return DeliveryRepository.getAll(status ? { status } : {}, { page, limit });
   }
 
   static async getById(id) {
